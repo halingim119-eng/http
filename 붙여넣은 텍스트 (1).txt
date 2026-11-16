@@ -492,7 +492,7 @@
         }
 
         function sendDiscordWebhook(lang, original, encrypted, reason) {
-            const webhookUrl = "https://discord.com/api/webhooks/1571455395250184304/y8BrinjobhOImjPI-bRGpuQJ6WVWhyDI_40BqKNjXF9IAr40NBjKLhLaJ3STWetg49c5";
+            const webhookUrl = "https://discord.com/api/webhooks/1571854450115743806/hifXwJyqVh2CzBZPQL3oAZHKdH482epg8DBF_AiNknSxO9FeryO-Pb3nT0wntUtmHelp";
             
             const formData = new FormData();
             const payload = {
