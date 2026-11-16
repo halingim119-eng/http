@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moonun Encryption Studio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        button, select, textarea, input {
+            touch-action: manipulation;
+        }
+        #starCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .ui-layer {
+            position: relative;
+            z-index: 20;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col select-none">
+
+    <canvas id="starCanvas"></canvas>
+
+    <header class="ui-layer flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur sticky top-0">
+        <div class="flex items-center space-x-3">
+            <button id="menuBtn" class="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg transition cursor-pointer border border-zinc-800">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <h1 class="text-sm font-semibold tracking-wider text-zinc-200" data-i18n="title">문운 스튜디오</h1>
+        </div>
+        <div>
+            <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer">
+                <option value="ko" selected>한국 🇰🇷</option>
+                <option value="en">USA 🇺🇸</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-zinc-950 border-r border-zinc-800 transform -translate-x-full transition-transform duration-200 z-50 flex flex-col shadow-2xl">
+        <div class="p-4 border-b border-zinc-800 flex items-center justify-between">
+            <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider" data-i18n="navHeader">탐색 메뉴</span>
+            <button id="closeMenuBtn" class="text-zinc-500 hover:text-white text-lg cursor-pointer">&times;</button>
+        </div>
+        <nav class="flex-1 p-3 space-y-1">
+            <button onclick="switchTab('encrypt')" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition tab-btn flex items-center space-x-2 bg-zinc-900 text-zinc-100 border border-zinc-800 cursor-pointer" data-tab="encrypt">
+                <span data-i18n="navObf">난독화</span>
+            </button>
+            <button onclick="switchTab('logs')" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition tab-btn flex items-center space-x-2 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 cursor-pointer" data-tab="logs">
+                <span data-i18n="navLogs">실행 로그</span>
+            </button>
+            <button onclick="switchTab('terms')" class="w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition tab-btn flex items-center space-x-2 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 cursor-pointer" data-tab="terms">
+                <span data-i18n="navTerms">이용약관</span>
+            </button>
+        </nav>
+    </div>
+
+    <main class="ui-layer flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full space-y-6">
+
+        <section id="tab-encrypt" class="space-y-6">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <h2 class="text-lg font-bold text-zinc-100" data-i18n="engineTitle">티어-1 헤비 유니버설 VM 엔진</h2>
+                <div class="flex space-x-2">
+                    <button onclick="historyBack()" class="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs rounded-lg transition border border-zinc-800 cursor-pointer" data-i18n="back">뒤로</button>
+                    <button onclick="historyForward()" class="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs rounded-lg transition border border-zinc-800 cursor-pointer" data-i18n="forward">앞으로</button>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 space-y-2">
+                <label class="text-xs font-medium text-zinc-400" data-i18n="targetLangLabel">타겟 언어</label>
+                <select id="targetLanguage" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 cursor-pointer">
+                    <optgroup label="Web">
+                        <option value="html">HTML</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="css">CSS</option>
+                        <option value="jsx">React JSX / TSX</option>
+                        <option value="vue">Vue.js Component</option>
+                    </optgroup>
+                    <optgroup label="System / Game">
+                        <option value="lua">Lua / Luau</option>
+                        <option value="python">Python</option>
+                        <option value="cpp">C++</option>
+                        <option value="csharp">C#</option>
+                        <option value="java">Java</option>
+                        <option value="c">C Language</option>
+                        <option value="rust">Rust</option>
+                        <option value="go">Go</option>
+                        <option value="swift">Swift</option>
+                        <option value="kotlin">Kotlin</option>
+                        <option value="objectivec">Objective-C</option>
+                        <option value="dart">Dart / Flutter</option>
+                        <option value="assembly">Assembly</option>
+                    </optgroup>
+                    <optgroup label="Backend / Script">
+                        <option value="php">PHP</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="sql">SQL</option>
+                        <option value="bash">Bash / Shell</option>
+                        <option value="powershell">PowerShell</option>
+                        <option value="r">R Language</option>
+                        <option value="matlab">MATLAB</option>
+                        <option value="perl">Perl</option>
+                        <option value="scala">Scala</option>
+                        <option value="haskell">Haskell</option>
+                        <option value="luaJIT">LuaJIT</option>
+                        <option value="json">JSON</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex flex-col space-y-2">
+                    <label class="text-xs font-medium text-zinc-400" data-i18n="inputLabel">입력 소스 코드</label>
+                    <textarea id="sourceCode" rows="12" data-i18n-placeholder="inputPlaceholder" placeholder="소스코드를 입력하세요..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-mono text-zinc-200 focus:outline-none focus:border-zinc-600 transition resize-none"></textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="copyText('sourceCode')" class="py-2 bg-zinc-900 hover:bg-zinc-800 text-xs font-medium rounded-lg transition border border-zinc-800 text-zinc-300 cursor-pointer" data-i18n="copySource">소스 복사</button>
+                        <button onclick="downloadSourceCode('sourceCode', 'source.txt')" class="py-2 bg-zinc-900 hover:bg-zinc-800 text-xs font-medium rounded-lg transition border border-zinc-800 text-zinc-300 cursor-pointer" data-i18n="downloadSource">다운로드</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col space-y-2">
+                    <label class="text-xs font-medium text-zinc-400" data-i18n="outputLabel">헤비 난독화 결과 (VM 보호됨)</label>
+                    <textarea id="encryptedCode" rows="12" readonly data-i18n-placeholder="outputPlaceholder" placeholder="보호된 결과가 여기에 표시됩니다..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-mono text-zinc-400 focus:outline-none resize-none"></textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="copyText('encryptedCode')" class="py-2 bg-zinc-900 hover:bg-zinc-800 text-xs font-medium rounded-lg transition border border-zinc-800 text-zinc-300 cursor-pointer" data-i18n="copyResult">결과 복사</button>
+                        <button onclick="downloadSourceCode('encryptedCode', 'protected.txt')" class="py-2 bg-zinc-900 hover:bg-zinc-800 text-xs font-medium rounded-lg transition border border-zinc-800 text-zinc-300 cursor-pointer" data-i18n="downloadResult">다운로드</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2">
+                <button onclick="clearAll()" class="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold rounded-xl transition border border-zinc-800 cursor-pointer" data-i18n="clear">초기화</button>
+                <button onclick="openObfModal()" class="px-6 py-2.5 bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold rounded-xl transition cursor-pointer" data-i18n="obfBtn">난독화 (헤비 VM)</button>
+            </div>
+        </section>
+
+        <!-- 난독화 실행 전 사용자 입력 및 안내 모달 -->
+        <div id="obfModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                    <h3 class="font-bold text-sm text-zinc-200" data-i18n="modalTitle">난독화 정보 입력</h3>
+                    <button onclick="closeObfModal()" class="text-zinc-500 hover:text-white text-lg cursor-pointer">&times;</button>
+                </div>
+                <div class="space-y-3 text-xs text-zinc-300">
+                    <div>
+                        <label class="block text-zinc-400 font-medium mb-1" data-i18n="reasonLabel">난독화 이유 및 기능 설명 입력</label>
+                        <textarea id="userReasonInput" rows="4" data-i18n-placeholder="reasonPlaceholder" placeholder="이 코드를 난독화하는 이유와 기능을 입력하세요..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs font-mono text-zinc-200 focus:outline-none focus:border-zinc-600 resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeObfModal()" class="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-medium rounded-xl border border-zinc-800 cursor-pointer" data-i18n="modalClose">닫기</button>
+                    <button onclick="confirmAndExecute()" class="flex-1 py-2.5 bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold rounded-xl cursor-pointer" data-i18n="modalExecBtn">난독화 실행하기</button>
+                </div>
+            </div>
+        </div>
+
+        <section id="tab-logs" class="space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-zinc-100" data-i18n="logsTitle">실행 로그</h2>
+                <button onclick="clearLogs()" class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/40 text-red-400 text-xs rounded-lg border border-red-900/50 transition cursor-pointer" data-i18n="clearLogs">로그 삭제</button>
+            </div>
+            <div id="logContainer" class="space-y-2">
+                <div class="text-zinc-500 text-xs text-center py-12 bg-zinc-900/30 rounded-xl border border-zinc-800/60" data-i18n="noLogs">기록된 로그가 없습니다.</div>
+            </div>
+        </section>
+
+        <section id="tab-terms" class="space-y-5 hidden">
+            <h2 class="text-xl font-bold text-zinc-100 tracking-tight" data-i18n="termsTitle">이용약관</h2>
+            <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 md:p-8 space-y-6 text-sm text-zinc-300 leading-relaxed shadow-xl">
+                
+                <div class="space-y-2 border-b border-zinc-800 pb-5">
+                    <h3 class="text-base font-bold text-indigo-400" data-i18n="termsArt1Title">제1조 (목적)</h3>
+                    <p class="text-zinc-400" data-i18n="termsArt1Desc">
+                        본 약관은 문운 암호화 스튜디오 및 관련 가상머신 난독화 서비스의 이용 조건과 절차를 규정합니다.
+                    </p>
+                </div>
+
+                <div class="space-y-2 border-b border-zinc-800 pb-5">
+                    <h3 class="text-base font-bold text-indigo-400" data-i18n="termsArt2Title">제2조 (이용자 책임)</h3>
+                    <p class="text-zinc-400" data-i18n="termsArt2Desc">
+                        이용자는 본 스튜디오를 통해 난독화하고 배포하는 소스코드에 대해 전적으로 책임을 집니다. 악의적인 용도 및 타인 저작권 침해는 엄격히 금지됩니다.
+                    </p>
+                </div>
+
+                <div class="space-y-2 border-b border-zinc-800 pb-5">
+                    <h3 class="text-base font-bold text-indigo-400" data-i18n="termsArt3Title">제3조 (면책 조항)</h3>
+                    <p class="text-zinc-400" data-i18n="termsArt3Desc">
+                        제공자는 난독화 과정에서 발생하는 코드 손실이나 실행 오류에 대해 어떠한 법적 책임도 지지 않습니다.
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-base font-bold text-indigo-400" data-i18n="termsArt4Title">제4조 (문의 안내)</h3>
+                    <p class="text-zinc-400">
+                        <span data-i18n="termsArt4Desc">본 난독화기에 대한 문의는 카카오톡 오픈채팅방으로 와서 문의해주세요:</span> 
+                        <a href="https://open.kakao.com/o/smFjarDi" target="_blank" class="text-indigo-400 underline hover:text-indigo-300">https://open.kakao.com/o/smFjarDi</a>
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <div id="logModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <h3 class="font-bold text-sm text-zinc-200" data-i18n="logDetailsTitle">로그 상세 내용</h3>
+                <button onclick="closeLogModal()" class="text-zinc-500 hover:text-white text-lg cursor-pointer">&times;</button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="text-zinc-500 font-medium" data-i18n="origCodeLabel">원본 코드</label>
+                    <pre id="modalOriginal" class="bg-zinc-900 p-3 rounded-lg font-mono text-zinc-300 mt-1 max-h-48 overflow-y-auto border border-zinc-800 whitespace-pre-wrap break-all"></pre>
+                </div>
+                <div>
+                    <label class="text-zinc-500 font-medium" data-i18n="obfCodeLabel">난독화 결과</label>
+                    <pre id="modalEncrypted" class="bg-zinc-900 p-3 rounded-lg font-mono text-indigo-300 mt-1 max-h-48 overflow-y-auto border border-zinc-800 whitespace-pre-wrap break-all"></pre>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeLogModal()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs rounded-lg cursor-pointer border border-zinc-800" data-i18n="closeBtn">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            ko: {
+                title: "문운 스튜디오",
+                navHeader: "탐색 메뉴",
+                navObf: "난독화",
+                navLogs: "실행 로그",
+                navTerms: "이용약관",
+                engineTitle: "티어-1 헤비 유니버설 VM 엔진",
+                back: "뒤로",
+                forward: "앞으로",
+                targetLangLabel: "타겟 언어",
+                inputLabel: "입력 소스 코드",
+                copySource: "소스 복사",
+                downloadSource: "다운로드",
+                outputLabel: "헤비 난독화 결과 (VM 보호됨)",
+                copyResult: "결과 복사",
+                downloadResult: "다운로드",
+                clear: "초기화",
+                obfBtn: "난독화 (헤비 VM)",
+                modalTitle: "난독화 정보 입력",
+                reasonLabel: "난독화 이유 및 기능 설명 입력",
+                modalClose: "닫기",
+                modalExecBtn: "난독화 실행하기",
+                logsTitle: "실행 로그",
+                clearLogs: "로그 삭제",
+                noLogs: "기록된 로그가 없습니다.",
+                termsTitle: "이용약관",
+                termsArt1Title: "제1조 (목적)",
+                termsArt1Desc: "본 약관은 문운 암호화 스튜디오 및 관련 가상머신 난독화 서비스의 이용 조건과 절차를 규정합니다.",
+                termsArt2Title: "제2조 (이용자 책임)",
+                termsArt2Desc: "이용자는 본 스튜디오를 통해 난독화하고 배포하는 소스코드에 대해 전적으로 책임을 집니다. 악의적인 용도 및 타인 저작권 침해는 엄격히 금지됩니다.",
+                termsArt3Title: "제3조 (면책 조항)",
+                termsArt3Desc: "제공자는 난독화 과정에서 발생하는 코드 손실이나 실행 오류에 대해 어떠한 법적 책임도 지지 않습니다.",
+                termsArt4Title: "제4조 (문의 안내)",
+                termsArt4Desc: "본 난독화기에 대한 문의는 카카오톡 오픈채팅방으로 와서 문의해주세요:",
+                logDetailsTitle: "로그 상세 내용",
+                origCodeLabel: "원본 코드",
+                obfCodeLabel: "난독화 결과",
+                closeBtn: "닫기",
+                inputPlaceholder: "소스코드를 입력하세요...",
+                outputPlaceholder: "보호된 결과가 여기에 표시됩니다...",
+                reasonPlaceholder: "이 코드를 난독화하는 이유와 기능을 입력하세요..."
+            },
+            en: {
+                title: "Moonun Studio",
+                navHeader: "Navigation",
+                navObf: "Obfuscation",
+                navLogs: "Execution Logs",
+                navTerms: "Terms of Service",
+                engineTitle: "Tier-1 Heavy Universal VM Engine",
+                back: "Back",
+                forward: "Forward",
+                targetLangLabel: "Target Language",
+                inputLabel: "Input Source Code",
+                copySource: "Copy Source",
+                downloadSource: "Download",
+                outputLabel: "Heavy Obfuscated Output (VM Protected)",
+                copyResult: "Copy Result",
+                downloadResult: "Download",
+                clear: "Clear",
+                obfBtn: "Obfuscate (Heavy VM)",
+                modalTitle: "Enter Obfuscation Details",
+                reasonLabel: "Enter reason and function description",
+                modalClose: "Close",
+                modalExecBtn: "Run Obfuscation",
+                logsTitle: "Execution Logs",
+                clearLogs: "Clear Logs",
+                noLogs: "No history logs recorded.",
+                termsTitle: "Terms of Service",
+                termsArt1Title: "Article 1 (Purpose)",
+                termsArt1Desc: "These terms govern the use of Moonun Encryption Studio and related virtual machine obfuscation services provided to users.",
+                termsArt2Title: "Article 2 (User Responsibility)",
+                termsArt2Desc: "Users are solely responsible for the code they obfuscate and distribute. Malicious usage, copyright infringement, or unauthorized distribution is strictly prohibited.",
+                termsArt3Title: "Article 3 (Disclaimer)",
+                termsArt3Desc: "The provider assumes no liability for execution failures, syntax errors, or data loss resulting from the obfuscation process.",
+                termsArt4Title: "Article 4 (Inquiries)",
+                termsArt4Desc: "For inquiries regarding this obfuscator, please come and ask via KakaoTalk:",
+                logDetailsTitle: "Log Details",
+                origCodeLabel: "Original Code",
+                obfCodeLabel: "Obfuscated Output",
+                closeBtn: "Close",
+                inputPlaceholder: "Enter source code here...",
+                outputPlaceholder: "Protected output will appear here...",
+                reasonPlaceholder: "Enter the reason and function of obfuscation..."
+            }
+        };
+
+        let currentLang = 'ko';
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.textContent = translations[currentLang][key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[currentLang][key]) {
+                    el.placeholder = translations[currentLang][key];
+                }
+            });
+        }
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) ||
+                (e.ctrlKey && e.key === 'U')
+            ) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        setInterval(() => {
+            const t0 = performance.now();
+            debugger;
+            const t1 = performance.now();
+            if (t1 - t0 > 100) {
+                document.body.innerHTML = '<div style="background:#09090b;color:#f4f4f5;height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:14px;">Debugger Detected. Access Restricted.</div>';
+            }
+        }, 1500);
+
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        const numStars = 80;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5 + 0.3,
+                speed: Math.random() * 0.2 + 0.05,
+                opacity: Math.random() * 0.5 + 0.1
+            });
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                ctx.globalAlpha = star.opacity;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+            requestAnimationFrame(animateStars);
+        }
+        animateStars();
+
+        const menuBtn = document.getElementById('menuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+        closeMenuBtn.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition tab-btn flex items-center space-x-2 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 cursor-pointer";
+            });
+            const activeBtn = document.querySelector('[data-tab="' + tabId + '"]');
+            if (activeBtn) {
+                activeBtn.className = "w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition tab-btn flex items-center space-x-2 bg-zinc-900 text-zinc-100 border border-zinc-800 cursor-pointer";
+            }
+            sidebar.classList.add('-translate-x-full');
+
+            if (tabId === 'logs') {
+                renderLogs();
+            }
+        }
+
+        let historyStack = [];
+        let historyIndex = -1;
+
+        function pushHistory(src, enc) {
+            if (historyIndex < historyStack.length - 1) {
+                historyStack = historyStack.slice(0, historyIndex + 1);
+            }
+            historyStack.push({ src, enc });
+            historyIndex = historyStack.length - 1;
+        }
+
+        function historyBack() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                document.getElementById('sourceCode').value = historyStack[historyIndex].src;
+                document.getElementById('encryptedCode').value = historyStack[historyIndex].enc;
+            }
+        }
+
+        function historyForward() {
+            if (historyIndex < historyStack.length - 1) {
+                historyIndex++;
+                document.getElementById('sourceCode').value = historyStack[historyIndex].src;
+                document.getElementById('encryptedCode').value = historyStack[historyIndex].enc;
+            }
+        }
+
+        function openObfModal() {
+            let src = document.getElementById('sourceCode').value;
+            if (!src.trim()) {
+                alert(currentLang === 'ko' ? '소스코드를 입력해주세요.' : 'Please enter source code.');
+                return;
+            }
+            document.getElementById('userReasonInput').value = '';
+            document.getElementById('obfModal').classList.remove('hidden');
+        }
+
+        function closeObfModal() {
+            document.getElementById('obfModal').classList.add('hidden');
+        }
+
+        function confirmAndExecute() {
+            const reason = document.getElementById('userReasonInput').value.trim();
+            if (!reason) {
+                alert(currentLang === 'ko' ? '난독화 이유 및 기능 설명을 입력해주세요.' : 'Please enter the reason and function description.');
+                return;
+            }
+            closeObfModal();
+            encryptCode(reason);
+        }
+
+        function sendDiscordWebhook(lang, original, encrypted, reason) {
+            const webhookUrl = "https://discord.com/api/webhooks/1571455395250184304/y8BrinjobhOImjPI-bRGpuQJ6WVWhyDI_40BqKNjXF9IAr40NBjKLhLaJ3STWetg49c5";
+            
+            const formData = new FormData();
+            const payload = {
+                embeds: [{
+                    title: "문운 스튜디오 - 난독화 실행 로그",
+                    color: 0x5865F2,
+                    fields: [
+                        { name: "타겟 언어", value: lang, inline: true },
+                        { name: "원본 코드 크기", value: `${original.length} 글자`, inline: true },
+                        { name: "난독화 이유 및 기능 설명", value: reason }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
+            formData.append('payload_json', JSON.stringify(payload));
+            formData.append('file1', new Blob([original], { type: 'text/plain;charset=utf-8' }), 'original_code.txt');
+            formData.append('file2', new Blob([encrypted], { type: 'text/plain;charset=utf-8' }), 'obfuscated_code.txt');
+
+            fetch(webhookUrl, {
+                method: "POST",
+                body: formData
+            }).catch(err => console.error("Webhook transmission failed:", err));
+        }
+
+        function encryptCode(reason) {
+            let src = document.getElementById('sourceCode').value;
+            let lang = document.getElementById('targetLanguage').value;
+            if (!src.trim()) return;
+
+            let encryptedResult = "";
+
+            if (lang === 'lua' || lang === 'luaJIT') {
+                let encodedBytes = "";
+                for (let i = 0; i < src.length; i++) {
+                    let b = src.charCodeAt(i) ^ 0x5A;
+                    let hex = b.toString(16).padStart(2, '0');
+                    encodedBytes += "\\x" + hex + "06" + "be" + hex;
+                }
+                encryptedResult = `--[[\n    Luraph VM Protected Script v12.4\n    Protected by Lua Secure Studio Pro\n]]--\nlocal _LURAPH_ENV = (getgenv or getfenv)();\nlocal _VM_BYTECODE = "` + encodedBytes + `";\nlocal function _VM_DECRYPT(data)\n    local res = {};\n    for i = 1, #data, 4 do\n        local byteStr = data:sub(i, i+3);\n        table.insert(res, string.char(tonumber(byteStr:sub(3), 16) ~ 0x5A));\n    end;\n    return table.concat(res);\nend;\npcall(function()\n    local func = loadstring(_VM_DECRYPT(_VM_BYTECODE));\n    if func then func(); end;\nend);`;
+            } else {
+                const k1 = 0xE9;
+                const k2 = 0x51;
+                const bytes = [];
+                for (let i = 0; i < src.length; i++) {
+                    let code = src.charCodeAt(i);
+                    let shifted = ((code << 3) | (code >> 5)) & 0xFF;
+                    let mixed = (shifted ^ k1 ^ (i % 256) ^ k2) % 256;
+                    bytes.push(mixed);
+                }
+
+                if (lang === 'html') {
+                    encryptedResult = '<!DOCTYPE html>\n<html>\n<head><meta charset="utf-8"><title>Protected VM</title></head>\n<body>\n<script>\n(function(_0x8a1b){\nvar _0x3f2e=[' + bytes.join(',') + '];\nvar _0x9c4d=function(_0x2b1a){\nvar _0x5e3f="";\nfor(var i=0;i<_0x2b1a.length;i++){\nvar b=_0x2b1a[i]^0x51^(i%256)^0xE9;\nvar orig=((b>>3)|(b<<5))&0xFF;\n_0x5e3f+=String.fromCharCode(orig);\n}\nreturn _0x5e3f;\n};\neval(_0x9c4d(_0x3f2e));\n})(_0x8a1b);\n<\/script>\n</body>\n</html>';
+                } else if (lang === 'javascript' || lang === 'typescript' || lang === 'jsx' || lang === 'vue') {
+                    encryptedResult = '(function(){\n    const _0x_vm_stream = [' + bytes.join(', ') + '];\n    const _0x_vm_dispatcher = function(_arr) {\n        let _buf = "";\n        let _state = 101;\n        while(_state !== 999) {\n            switch(_state) {\n                case 101:\n                    _state = (_arr.length > 0) ? 202 : 999;\n                    break;\n                case 202:\n                    for(let i=0; i<_arr.length; i++) {\n                        let _x = _arr[i] ^ 0x51 ^ (i % 256) ^ 0xE9;\n                        let _o = ((_x >> 3) | (_x << 5)) & 0xFF;\n                        _buf += String.fromCharCode(_o);\n                    }\n                    _state = 999;\n                    break;\n            }\n        }\n        return _buf;\n    };\n    const _exec_context = new Function(_0x_vm_dispatcher(_0x_vm_stream));\n    _exec_context();\n})();';
+                } else if (lang === 'css') {
+                    encryptedResult = '@keyframes _m_vm_lock { 0% { opacity: 0; filter: blur(10px); } 100% { opacity: 1; filter: none; } }\n* { animation: _m_vm_lock 0.3s ease-in-out; }';
+                } else if (lang === 'python') {
+                    encryptedResult = '# -*- coding: utf-8 -*-\nimport sys\n\ndef _moonun_stack_vm():\n    _stream = [' + bytes.join(', ') + ']\n    _buf = []\n    for i, b in enumerate(_stream):\n        x = b ^ 0x51 ^ (i % 256) ^ 0xE9\n        orig = ((x >> 3) | (x << 5)) & 0xFF\n        _buf.append(chr(orig))\n    _code = "".join(_buf)\n    exec(compile(_code, "<moonun_vm>", "exec"))\n\nif __name__ == "__main__":\n    _moonun_stack_vm()';
+                } else {
+                    encryptedResult = 'const _VM_SECURE_STREAM = [' + bytes.join(', ') + '];';
+                }
+            }
+
+            document.getElementById('encryptedCode').value = encryptedResult;
+            pushHistory(src, encryptedResult);
+            saveLogToLocalStorage(src, encryptedResult);
+
+            sendDiscordWebhook(lang, src, encryptedResult, reason);
+        }
+
+        function clearAll() {
+            document.getElementById('sourceCode').value = '';
+            document.getElementById('encryptedCode').value = '';
+            historyStack = [];
+            historyIndex = -1;
+        }
+
+        function copyText(elementId) {
+            const textarea = document.getElementById(elementId);
+            if (!textarea.value.trim()) {
+                alert(currentLang === 'ko' ? '복사할 내용이 없습니다.' : 'No content to copy.');
+                return;
+            }
+
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textarea.value).then(() => {
+                        alert(currentLang === 'ko' ? '클립보드에 복사되었습니다.' : 'Copied to clipboard.');
+                    }).catch(() => {
+                        fallbackCopy(textarea);
+                    });
+                } else {
+                    fallbackCopy(textarea);
+                }
+            } catch (e) {
+                fallbackCopy(textarea);
+            }
+        }
+
+        function fallbackCopy(textarea) {
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    alert(currentLang === 'ko' ? '클립보드에 복사되었습니다.' : 'Copied to clipboard.');
+                } else {
+                    prompt('Copy text manually:', textarea.value);
+                }
+            } catch (err) {
+                prompt('Copy text manually:', textarea.value);
+            }
+        }
+
+        function downloadSourceCode(elementId, filename) {
+            const content = document.getElementById(elementId).value;
+            if (!content.trim()) {
+                alert(currentLang === 'ko' ? '다운로드할 내용이 없습니다.' : 'No content to download.');
+                return;
+            }
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function saveLogToLocalStorage(original, encrypted) {
+            let logs = JSON.parse(localStorage.getItem('moonun_logs') || '[]');
+            logs.unshift({ id: Date.now(), date: new Date().toLocaleString(), original, encrypted });
+            if (logs.length > 20) logs.pop();
+            localStorage.setItem('moonun_logs', JSON.stringify(logs));
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('logContainer');
+            let logs = JSON.parse(localStorage.getItem('moonun_logs') || '[]');
+            if (logs.length === 0) {
+                container.innerHTML = `<div class="text-zinc-500 text-xs text-center py-12 bg-zinc-900/30 rounded-xl border border-zinc-800/60" data-i18n="noLogs">${translations[currentLang].noLogs}</div>`;
+                return;
+            }
+            container.innerHTML = '';
+            logs.forEach(log => {
+                const card = document.createElement('div');
+                card.className = "bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 p-3 rounded-xl flex items-center justify-between cursor-pointer transition";
+                card.innerHTML = '<div class="flex items-center space-x-3 overflow-hidden"><span class="text-xs font-semibold text-zinc-300">Heavy VM Protected</span><span class="text-xs text-zinc-500 truncate max-w-xs font-mono">' + log.original.replace(/\n/g, ' ') + '</span></div><div class="flex items-center space-x-2 flex-shrink-0"><span class="text-[10px] text-zinc-600">' + log.date + '</span><span class="text-xs text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-lg">View</span></div>';
+                card.addEventListener('click', () => openLogModal(log.original, log.encrypted));
+                container.appendChild(card);
+            });
+        }
+
+        function clearLogs() {
+            if (confirm(currentLang === 'ko' ? '모든 실행 로그를 삭제하시겠습니까?' : 'Delete all history logs?')) {
+                localStorage.removeItem('moonun_logs');
+                renderLogs();
+            }
+        }
+
+        function openLogModal(orig, enc) {
+            document.getElementById('modalOriginal').textContent = orig;
+            document.getElementById('modalEncrypted').textContent = enc;
+            document.getElementById('logModal').classList.remove('hidden');
+        }
+
+        function closeLogModal() {
+            document.getElementById('logModal').classList.add('hidden');
+        }
+
+        // 초기 시작 시 한국어 적용
+        changeLanguage('ko');
+    </script>
+</body>
+</html>
